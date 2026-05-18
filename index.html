@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>木曜会エピソードDB</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#6366f1',
+            genre1: '#0ea5e9',
+            genre2: '#f59e0b',
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<!-- ログイン画面 -->
+<div id="login-screen" class="hidden fixed inset-0 bg-gray-900 bg-opacity-95 flex items-center justify-center z-50">
+  <div class="bg-white rounded-2xl p-10 text-center shadow-2xl max-w-sm w-full mx-4">
+    <div class="text-4xl mb-4">🕳️</div>
+    <h1 class="text-2xl font-bold text-gray-800 mb-2">木曜会エピソードDB</h1>
+    <p class="text-gray-500 text-sm mb-8">アクセスにはログインが必要です</p>
+    <button id="login-btn" class="w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-200 hover:border-primary text-gray-700 font-medium py-3 px-6 rounded-xl transition-all hover:shadow-md">
+      <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Google でログイン
+    </button>
+  </div>
+</div>
+
+<!-- ヘッダー -->
+<header class="bg-white border-b border-gray-200 sticky top-0 z-40">
+  <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <span class="text-xl">🕳️</span>
+      <h1 class="text-lg font-bold text-gray-800">木曜会エピソードDB</h1>
+    </div>
+    <div class="flex items-center gap-3">
+      <a href="content.html" class="text-sm text-gray-500 hover:text-primary transition-colors">コンテンツ保管庫</a>
+      <div id="admin-link-wrapper" class="hidden">
+        <a href="admin.html" class="text-sm bg-primary text-white px-3 py-1.5 rounded-lg hover:bg-indigo-700 transition-colors">管理ツール</a>
+      </div>
+      <div id="user-info" class="hidden flex items-center gap-2">
+        <img id="user-avatar" class="w-7 h-7 rounded-full" src="" alt="">
+        <button id="logout-btn" class="text-xs text-gray-400 hover:text-gray-600">ログアウト</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- メイン -->
+<main class="max-w-6xl mx-auto px-4 py-6">
+
+  <!-- 検索・フィルター -->
+  <div class="bg-white rounded-xl border border-gray-200 p-4 mb-6">
+    <div class="flex flex-col md:flex-row gap-3">
+      <input id="search-input" type="text" placeholder="キーワードで検索（著者・タイトル・ツール・タグ）"
+        class="flex-1 border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-primary">
+      <div class="flex gap-2 flex-wrap">
+        <button onclick="setFilter('all')" data-filter="all"
+          class="filter-btn active text-sm px-4 py-2 rounded-lg border font-medium transition-all">すべて</button>
+        <button onclick="setFilter('1')" data-filter="1"
+          class="filter-btn text-sm px-4 py-2 rounded-lg border font-medium transition-all">AI活用事例①</button>
+        <button onclick="setFilter('2')" data-filter="2"
+          class="filter-btn text-sm px-4 py-2 rounded-lg border font-medium transition-all">変化・成長②</button>
+        <select id="post-type-filter" class="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-primary">
+          <option value="">post_type</option>
+          <option value="how_to">how_to</option>
+          <option value="product">product</option>
+          <option value="progress">progress</option>
+          <option value="knowledge">knowledge</option>
+        </select>
+        <select id="scale-filter" class="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-primary">
+          <option value="">scale</option>
+          <option value="small">small</option>
+          <option value="big">big</option>
+        </select>
+        <select id="status-filter" class="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-primary">
+          <option value="">status</option>
+          <option value="draft">draft</option>
+          <option value="published">published</option>
+        </select>
+      </div>
+    </div>
+    <div id="result-count" class="mt-2 text-xs text-gray-400"></div>
+  </div>
+
+  <!-- エピソード一覧 -->
+  <div id="episodes-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+
+  <!-- ローディング -->
+  <div id="loading" class="text-center py-16 text-gray-400">
+    <div class="inline-block w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mb-3"></div>
+    <p class="text-sm">読み込み中...</p>
+  </div>
+
+  <!-- 空状態 -->
+  <div id="empty-state" class="hidden text-center py-16 text-gray-400">
+    <div class="text-5xl mb-4">🕳️</div>
+    <p class="text-sm">エピソードがありません</p>
+    <a href="admin.html" class="mt-4 inline-block text-sm text-primary hover:underline">管理ツールで追加する</a>
+  </div>
+</main>
+
+<!-- コンテンツ生成モーダル -->
+<div id="generate-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div class="p-6">
+      <div class="flex items-start justify-between mb-4">
+        <h2 class="text-lg font-bold text-gray-800">コンテンツを生成</h2>
+        <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+      </div>
+      <div id="modal-episode-title" class="text-sm text-gray-500 mb-4 pb-4 border-b border-gray-100"></div>
+
+      <div class="grid grid-cols-3 gap-2 mb-4">
+        <button onclick="selectType('x_post')" data-type="x_post"
+          class="type-btn text-sm py-2 px-3 rounded-lg border font-medium transition-all">X投稿（1ポスト）</button>
+        <button onclick="selectType('x_thread')" data-type="x_thread"
+          class="type-btn text-sm py-2 px-3 rounded-lg border font-medium transition-all">Xスレッド</button>
+        <button onclick="selectType('youtube')" data-type="youtube"
+          class="type-btn text-sm py-2 px-3 rounded-lg border font-medium transition-all">YouTube台本</button>
+      </div>
+
+      <div class="flex gap-2 mb-4">
+        <button onclick="selectTone('共感系')" data-tone="共感系"
+          class="tone-btn text-xs py-1.5 px-3 rounded-full border transition-all">共感系</button>
+        <button onclick="selectTone('驚き系')" data-tone="驚き系"
+          class="tone-btn text-xs py-1.5 px-3 rounded-full border transition-all">驚き系</button>
+        <button onclick="selectTone('背中を押す系')" data-tone="背中を押す系"
+          class="tone-btn text-xs py-1.5 px-3 rounded-full border transition-all">背中を押す系</button>
+      </div>
+
+      <div class="flex items-center gap-2 mb-4">
+        <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+          <input type="checkbox" id="anonymize-check" class="rounded">
+          投稿者名を匿名化する
+        </label>
+      </div>
+
+      <div id="gemini-key-warning" class="hidden bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4 text-xs text-amber-700">
+        Gemini APIキーが設定されていません。
+        <a href="admin.html" class="underline font-medium">管理ツール</a>でAPIキーを設定してください。
+      </div>
+
+      <button id="generate-btn" onclick="generateContent()"
+        class="w-full bg-primary text-white font-medium py-3 rounded-xl hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+        生成する
+      </button>
+
+      <div id="generate-result" class="hidden mt-4">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-sm font-medium text-gray-700">生成結果</span>
+          <div class="flex gap-2">
+            <button onclick="regenerateContent()" class="text-xs text-primary hover:underline">再生成</button>
+            <button onclick="copyResult()" class="text-xs bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-lg transition-colors">コピー</button>
+          </div>
+        </div>
+        <textarea id="result-textarea"
+          class="w-full border border-gray-200 rounded-lg p-3 text-sm text-gray-700 resize-none focus:outline-none focus:border-primary"
+          rows="10"></textarea>
+        <button onclick="saveContent()" class="mt-2 w-full bg-green-500 text-white font-medium py-2 rounded-xl hover:bg-green-600 transition-colors text-sm">
+          コンテンツ保管庫に保存
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { db, auth, googleProvider } from './firebase-config.js';
+  import {
+    collection, getDocs, query, orderBy
+  } from "https://www.gstatic.com/firebasejs/11.8.0/firebase-firestore.js";
+  import {
+    onAuthStateChanged, signInWithPopup, signOut
+  } from "https://www.gstatic.com/firebasejs/11.8.0/firebase-auth.js";
+
+  // 許可ユーザーのメールアドレス（自分と共有相手）
+  // ▼ アクセスを許可するGoogleアカウントのメールアドレスを追加してください
+  // 空配列のままにするとログインユーザー全員がアクセスできます
+  const ALLOWED_EMAILS = ['kazuya.imasaka@gmail.com'];
+
+  let allEpisodes = [];
+  let currentFilter = 'all';
+  let currentEpisode = null;
+  let currentType = 'x_post';
+  let currentTone = '共感系';
+  let currentUser = null;
+
+  // ▼ 管理ツールリンクを表示する管理者のメールアドレス
+  const ADMIN_EMAIL = 'kazuya.imasaka@gmail.com';
+
+  // --- 認証 ---
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+      showLoginScreen();
+      return;
+    }
+    if (ALLOWED_EMAILS.length > 0 && !ALLOWED_EMAILS.includes(user.email)) {
+      await signOut(auth);
+      alert('アクセス権限がありません。');
+      showLoginScreen();
+      return;
+    }
+    currentUser = user;
+    hideLoginScreen(user);
+    if (ADMIN_EMAIL && user.email === ADMIN_EMAIL) {
+      document.getElementById('admin-link-wrapper').classList.remove('hidden');
+    }
+    loadEpisodes();
+  });
+
+  document.getElementById('login-btn').addEventListener('click', async () => {
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (e) {
+      alert('ログインに失敗しました: ' + e.message);
+    }
+  });
+
+  document.getElementById('logout-btn').addEventListener('click', async () => {
+    await signOut(auth);
+  });
+
+  function showLoginScreen() {
+    document.getElementById('login-screen').classList.remove('hidden');
+    document.getElementById('user-info').classList.add('hidden');
+  }
+
+  function hideLoginScreen(user) {
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('user-info').classList.remove('hidden');
+    document.getElementById('user-avatar').src = user.photoURL || '';
+  }
+
+  // --- データ取得 ---
+  async function loadEpisodes() {
+    try {
+      const q = query(collection(db, 'episodes'), orderBy('date', 'desc'));
+      const snapshot = await getDocs(q);
+      allEpisodes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      renderEpisodes();
+    } catch (e) {
+      console.error(e);
+      document.getElementById('loading').innerHTML = '<p class="text-sm text-red-400">データの取得に失敗しました</p>';
+    }
+  }
+
+  // --- 描画 ---
+  function renderEpisodes() {
+    document.getElementById('loading').classList.add('hidden');
+    const keyword = document.getElementById('search-input').value.toLowerCase();
+    const postType = document.getElementById('post-type-filter').value;
+    const scale = document.getElementById('scale-filter').value;
+    const status = document.getElementById('status-filter').value;
+
+    let filtered = allEpisodes.filter(ep => {
+      if (currentFilter !== 'all' && String(ep.genre) !== currentFilter) return false;
+      if (postType && ep.post_type !== postType) return false;
+      if (scale && ep.scale !== scale) return false;
+      if (status && ep.status !== status) return false;
+      if (keyword) {
+        const text = [ep.author, ep.title, ep.summary, ...(ep.tools || []), ...(ep.tags || [])].join(' ').toLowerCase();
+        if (!text.includes(keyword)) return false;
+      }
+      return true;
+    });
+
+    document.getElementById('result-count').textContent = `${filtered.length} 件`;
+    const grid = document.getElementById('episodes-grid');
+    grid.innerHTML = '';
+
+    if (filtered.length === 0) {
+      document.getElementById('empty-state').classList.remove('hidden');
+      return;
+    }
+    document.getElementById('empty-state').classList.add('hidden');
+
+    filtered.forEach(ep => {
+      const card = buildCard(ep);
+      grid.appendChild(card);
+    });
+  }
+
+  function buildCard(ep) {
+    const isGenre1 = String(ep.genre) === '1';
+    const genreLabel = isGenre1 ? 'AI活用事例①' : '変化・成長②';
+    const genreColor = isGenre1 ? 'bg-sky-100 text-sky-700' : 'bg-amber-100 text-amber-700';
+    const scaleBadge = ep.scale === 'big'
+      ? '<span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-medium">BIG</span>'
+      : '';
+
+    const tools = (ep.tools || []).slice(0, 3).map(t =>
+      `<span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">${t}</span>`
+    ).join('');
+
+    const div = document.createElement('div');
+    div.className = 'bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer flex flex-col gap-3';
+    div.innerHTML = `
+      <div class="flex items-start justify-between gap-2">
+        <span class="text-xs font-medium px-2 py-0.5 rounded-full ${genreColor}">${genreLabel}</span>
+        <div class="flex items-center gap-1">
+          ${scaleBadge}
+          <span class="text-xs text-gray-400">${ep.date || ''}</span>
+        </div>
+      </div>
+      <div>
+        <h3 class="font-semibold text-gray-800 text-sm leading-snug mb-1">${ep.title || '（タイトルなし）'}</h3>
+        <p class="text-xs text-gray-500">${ep.author || ''}</p>
+      </div>
+      ${ep.summary ? `<p class="text-xs text-gray-600 leading-relaxed line-clamp-3">${ep.summary}</p>` : ''}
+      ${ep.message ? `<p class="text-xs text-primary font-medium leading-relaxed">"${ep.message}"</p>` : ''}
+      <div class="flex flex-wrap gap-1">${tools}</div>
+      <button onclick="event.stopPropagation(); openGenerateModal('${ep.id}')"
+        class="mt-auto w-full text-xs bg-indigo-50 hover:bg-indigo-100 text-primary font-medium py-2 rounded-lg transition-colors">
+        コンテンツを生成
+      </button>
+    `;
+    return div;
+  }
+
+  // --- フィルター ---
+  window.setFilter = function(filter) {
+    currentFilter = filter;
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      const active = btn.dataset.filter === filter;
+      btn.classList.toggle('bg-primary', active);
+      btn.classList.toggle('text-white', active);
+      btn.classList.toggle('border-primary', active);
+      btn.classList.toggle('active', active);
+    });
+    renderEpisodes();
+  };
+
+  document.getElementById('search-input').addEventListener('input', renderEpisodes);
+  document.getElementById('post-type-filter').addEventListener('change', renderEpisodes);
+  document.getElementById('scale-filter').addEventListener('change', renderEpisodes);
+  document.getElementById('status-filter').addEventListener('change', renderEpisodes);
+
+  // --- コンテンツ生成モーダル ---
+  window.openGenerateModal = function(id) {
+    currentEpisode = allEpisodes.find(ep => ep.id === id);
+    if (!currentEpisode) return;
+    document.getElementById('modal-episode-title').textContent =
+      `${currentEpisode.author} — ${currentEpisode.title}`;
+    document.getElementById('generate-result').classList.add('hidden');
+    document.getElementById('result-textarea').value = '';
+    selectType('x_post');
+    selectTone('共感系');
+
+    const apiKey = localStorage.getItem('gemini_api_key');
+    document.getElementById('gemini-key-warning').classList.toggle('hidden', !!apiKey);
+    document.getElementById('generate-modal').classList.remove('hidden');
+  };
+
+  window.closeModal = function() {
+    document.getElementById('generate-modal').classList.add('hidden');
+    currentEpisode = null;
+  };
+
+  window.selectType = function(type) {
+    currentType = type;
+    document.querySelectorAll('.type-btn').forEach(btn => {
+      const active = btn.dataset.type === type;
+      btn.classList.toggle('bg-primary', active);
+      btn.classList.toggle('text-white', active);
+      btn.classList.toggle('border-primary', active);
+    });
+  };
+
+  window.selectTone = function(tone) {
+    currentTone = tone;
+    document.querySelectorAll('.tone-btn').forEach(btn => {
+      const active = btn.dataset.tone === tone;
+      btn.classList.toggle('bg-primary', active);
+      btn.classList.toggle('text-white', active);
+      btn.classList.toggle('border-primary', active);
+    });
+  };
+
+  window.generateContent = async function() {
+    const apiKey = localStorage.getItem('gemini_api_key');
+    if (!apiKey) {
+      alert('管理ツールでGemini APIキーを設定してください。');
+      return;
+    }
+    const btn = document.getElementById('generate-btn');
+    btn.disabled = true;
+    btn.textContent = '生成中...';
+
+    const anonymize = document.getElementById('anonymize-check').checked;
+    const ep = { ...currentEpisode };
+    if (anonymize) ep.author = 'ある参加者';
+
+    try {
+      const result = await callGeminiForContent(apiKey, ep, currentType, currentTone);
+      document.getElementById('result-textarea').value = result;
+      document.getElementById('generate-result').classList.remove('hidden');
+    } catch (e) {
+      alert('生成に失敗しました: ' + e.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '生成する';
+    }
+  };
+
+  window.regenerateContent = function() {
+    window.generateContent();
+  };
+
+  window.copyResult = function() {
+    const text = document.getElementById('result-textarea').value;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = event.target;
+      btn.textContent = 'コピー済み';
+      setTimeout(() => btn.textContent = 'コピー', 1500);
+    });
+  };
+
+  window.saveContent = async function() {
+    const { addDoc, collection: col, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/11.8.0/firebase-firestore.js");
+    const text = document.getElementById('result-textarea').value;
+    if (!text) return;
+    try {
+      await addDoc(col(db, 'contents'), {
+        created_at: new Date().toISOString().slice(0, 10),
+        type: currentType,
+        source_episode_id: currentEpisode?.id || null,
+        content: text,
+        tone: currentTone,
+        status: 'draft'
+      });
+      alert('保存しました');
+    } catch (e) {
+      alert('保存に失敗しました: ' + e.message);
+    }
+  };
+
+  async function callGeminiForContent(apiKey, ep, type, tone) {
+    const typeLabels = {
+      x_post: 'X投稿（140〜280字。フック＋エピソード＋メッセージの構成）',
+      x_thread: 'Xスレッド（3〜5投稿の連投形式。詳細なビフォーアフターや手順を展開）',
+      youtube: 'YouTube台本（タイトル案・サムネイル案・3分割構成：つかみ・本題・まとめ）'
+    };
+
+    const prompt = `以下のエピソードデータをもとに、${typeLabels[type]}を${tone}のトーンで作成してください。
+
+エピソードデータ:
+${JSON.stringify(ep, null, 2)}
+
+条件:
+- 投稿者の実体験を活かす
+- 発信者（自分）が木曜会コミュニティで得た学びとして発信する視点
+- ハッシュタグは付けない
+- 自然な日本語で`;
+
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+      }
+    );
+    if (!res.ok) throw new Error(`API error: ${res.status}`);
+    const data = await res.json();
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || '（生成結果なし）';
+  }
+
+  // 初期フィルターボタンのスタイル
+  setFilter('all');
+</script>
+</body>
+</html>

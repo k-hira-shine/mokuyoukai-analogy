@@ -1,0 +1,38 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 許可するメールアドレスのリスト
+    function isAllowed() {
+      return request.auth != null &&
+        request.auth.token.email in [
+          'kazuya.imasaka@gmail.com'
+          // ビジネスパートナーのメールアドレスをここに追加:
+          // 'partner@example.com'
+        ];
+    }
+
+    // 管理者（書き込み権限あり）
+    function isAdmin() {
+      return request.auth != null &&
+        request.auth.token.email == 'kazuya.imasaka@gmail.com';
+    }
+
+    // エピソード: 許可ユーザーは読み取り可、管理者のみ書き込み可
+    match /episodes/{docId} {
+      allow read: if isAllowed();
+      allow write: if isAdmin();
+    }
+
+    // コンテンツ保管庫: 許可ユーザーは読み取り可、管理者のみ書き込み可
+    match /contents/{docId} {
+      allow read: if isAllowed();
+      allow write: if isAdmin();
+    }
+
+    // 設定: 管理者のみ
+    match /settings/{docId} {
+      allow read, write: if isAdmin();
+    }
+  }
+}

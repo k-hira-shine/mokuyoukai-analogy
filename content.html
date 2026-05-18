@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>コンテンツ保管庫 — 木曜会エピソードDB</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: { colors: { primary: '#6366f1' } } }
+    }
+  </script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<!-- ログイン画面 -->
+<div id="login-screen" class="hidden fixed inset-0 bg-gray-900 bg-opacity-95 flex items-center justify-center z-50">
+  <div class="bg-white rounded-2xl p-10 text-center shadow-2xl max-w-sm w-full mx-4">
+    <div class="text-4xl mb-4">🕳️</div>
+    <h1 class="text-2xl font-bold text-gray-800 mb-2">木曜会エピソードDB</h1>
+    <p class="text-gray-500 text-sm mb-8">アクセスにはログインが必要です</p>
+    <button id="login-btn" class="w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-200 hover:border-primary text-gray-700 font-medium py-3 px-6 rounded-xl transition-all hover:shadow-md">
+      <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Google でログイン
+    </button>
+  </div>
+</div>
+
+<!-- ヘッダー -->
+<header class="bg-white border-b border-gray-200 sticky top-0 z-40">
+  <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <a href="index.html" class="text-gray-400 hover:text-gray-600 text-sm">← エピソード一覧</a>
+      <span class="text-gray-300">|</span>
+      <h1 class="text-lg font-bold text-gray-800">コンテンツ保管庫</h1>
+    </div>
+    <div class="flex items-center gap-3">
+      <div id="admin-link-wrapper" class="hidden">
+        <a href="admin.html" class="text-sm bg-primary text-white px-3 py-1.5 rounded-lg hover:bg-indigo-700 transition-colors">管理ツール</a>
+      </div>
+      <div id="user-info" class="hidden flex items-center gap-2">
+        <img id="user-avatar" class="w-7 h-7 rounded-full" src="" alt="">
+        <button id="logout-btn" class="text-xs text-gray-400 hover:text-gray-600">ログアウト</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-5xl mx-auto px-4 py-6">
+
+  <!-- フィルター -->
+  <div class="bg-white rounded-xl border border-gray-200 p-4 mb-6 flex flex-col sm:flex-row gap-3">
+    <div class="flex gap-2 flex-wrap">
+      <button onclick="setTypeFilter('all')" data-type="all"
+        class="type-filter-btn text-sm px-4 py-2 rounded-lg border font-medium transition-all">すべて</button>
+      <button onclick="setTypeFilter('x_post')" data-type="x_post"
+        class="type-filter-btn text-sm px-4 py-2 rounded-lg border font-medium transition-all">X投稿</button>
+      <button onclick="setTypeFilter('x_thread')" data-type="x_thread"
+        class="type-filter-btn text-sm px-4 py-2 rounded-lg border font-medium transition-all">Xスレッド</button>
+      <button onclick="setTypeFilter('youtube')" data-type="youtube"
+        class="type-filter-btn text-sm px-4 py-2 rounded-lg border font-medium transition-all">YouTube台本</button>
+      <button onclick="setTypeFilter('daily_suggestion')" data-type="daily_suggestion"
+        class="type-filter-btn text-sm px-4 py-2 rounded-lg border font-medium transition-all">日次提案</button>
+    </div>
+    <div class="flex gap-2 ml-auto">
+      <select id="status-filter" class="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-primary">
+        <option value="">すべてのstatus</option>
+        <option value="draft">draft（未使用）</option>
+        <option value="used">used（使用済み）</option>
+        <option value="archived">archived（保存）</option>
+      </select>
+    </div>
+  </div>
+  <div id="result-count" class="mb-3 text-xs text-gray-400"></div>
+
+  <!-- コンテンツ一覧 -->
+  <div id="contents-list" class="flex flex-col gap-3"></div>
+
+  <div id="loading" class="text-center py-16 text-gray-400">
+    <div class="inline-block w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mb-3"></div>
+    <p class="text-sm">読み込み中...</p>
+  </div>
+
+  <div id="empty-state" class="hidden text-center py-16 text-gray-400">
+    <div class="text-5xl mb-4">📭</div>
+    <p class="text-sm">コンテンツがありません</p>
+    <p class="text-xs mt-2">エピソード一覧でコンテンツを生成するか、管理ツールで処理してください</p>
+  </div>
+</main>
+
+<script type="module">
+  import { db, auth, googleProvider } from './firebase-config.js';
+  import {
+    collection, getDocs, doc, updateDoc, query, orderBy
+  } from "https://www.gstatic.com/firebasejs/11.8.0/firebase-firestore.js";
+  import {
+    onAuthStateChanged, signInWithPopup, signOut
+  } from "https://www.gstatic.com/firebasejs/11.8.0/firebase-auth.js";
+
+  // ▼ アクセスを許可するGoogleアカウントのメールアドレスを追加してください
+  const ALLOWED_EMAILS = ['kazuya.imasaka@gmail.com'];
+  // ▼ 管理ツールリンクを表示する管理者のメールアドレス
+  const ADMIN_EMAIL = 'kazuya.imasaka@gmail.com';
+
+  let allContents = [];
+  let currentTypeFilter = 'all';
+
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) { showLogin(); return; }
+    if (ALLOWED_EMAILS.length > 0 && !ALLOWED_EMAILS.includes(user.email)) {
+      await signOut(auth);
+      alert('アクセス権限がありません。');
+      showLogin(); return;
+    }
+    hideLogin(user);
+    if (ADMIN_EMAIL && user.email === ADMIN_EMAIL) {
+      document.getElementById('admin-link-wrapper').classList.remove('hidden');
+    }
+    loadContents();
+  });
+
+  document.getElementById('login-btn').addEventListener('click', async () => {
+    try { await signInWithPopup(auth, googleProvider); }
+    catch (e) { alert('ログインに失敗しました: ' + e.message); }
+  });
+  document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
+
+  function showLogin() {
+    document.getElementById('login-screen').classList.remove('hidden');
+    document.getElementById('user-info').classList.add('hidden');
+  }
+  function hideLogin(user) {
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('user-info').classList.remove('hidden');
+    document.getElementById('user-avatar').src = user.photoURL || '';
+  }
+
+  async function loadContents() {
+    try {
+      const q = query(collection(db, 'contents'), orderBy('created_at', 'desc'));
+      const snap = await getDocs(q);
+      allContents = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderContents();
+    } catch (e) {
+      document.getElementById('loading').innerHTML = '<p class="text-sm text-red-400">データの取得に失敗しました</p>';
+    }
+  }
+
+  function renderContents() {
+    document.getElementById('loading').classList.add('hidden');
+    const statusVal = document.getElementById('status-filter').value;
+
+    const filtered = allContents.filter(c => {
+      if (currentTypeFilter !== 'all' && c.type !== currentTypeFilter) return false;
+      if (statusVal && c.status !== statusVal) return false;
+      return true;
+    });
+
+    document.getElementById('result-count').textContent = `${filtered.length} 件`;
+    const list = document.getElementById('contents-list');
+    list.innerHTML = '';
+
+    if (filtered.length === 0) {
+      document.getElementById('empty-state').classList.remove('hidden');
+      return;
+    }
+    document.getElementById('empty-state').classList.add('hidden');
+    filtered.forEach(c => list.appendChild(buildCard(c)));
+  }
+
+  function buildCard(c) {
+    const typeLabels = {
+      x_post: 'X投稿', x_thread: 'Xスレッド', youtube: 'YouTube台本', daily_suggestion: '日次提案'
+    };
+    const typeColors = {
+      x_post: 'bg-sky-100 text-sky-700',
+      x_thread: 'bg-sky-100 text-sky-700',
+      youtube: 'bg-red-100 text-red-700',
+      daily_suggestion: 'bg-amber-100 text-amber-700'
+    };
+    const statusColors = {
+      draft: 'bg-gray-100 text-gray-600',
+      used: 'bg-green-100 text-green-700',
+      archived: 'bg-purple-100 text-purple-700'
+    };
+
+    const div = document.createElement('div');
+    div.className = 'bg-white rounded-xl border border-gray-200 p-4';
+    div.innerHTML = `
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-medium px-2 py-0.5 rounded-full ${typeColors[c.type] || 'bg-gray-100 text-gray-600'}">${typeLabels[c.type] || c.type}</span>
+          ${c.tone ? `<span class="text-xs text-gray-400">${c.tone}</span>` : ''}
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-medium px-2 py-0.5 rounded-full ${statusColors[c.status] || 'bg-gray-100'}">${c.status}</span>
+          <span class="text-xs text-gray-400">${c.created_at || ''}</span>
+        </div>
+      </div>
+      <pre class="text-sm text-gray-700 whitespace-pre-wrap font-sans leading-relaxed mb-3 max-h-40 overflow-y-auto">${escapeHtml(c.content || '')}</pre>
+      <div class="flex gap-2 flex-wrap">
+        <button onclick="copyContent('${c.id}')" class="text-xs bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-lg transition-colors">コピー</button>
+        ${c.status !== 'used' ? `<button onclick="markAs('${c.id}', 'used')" class="text-xs bg-green-50 hover:bg-green-100 text-green-700 px-3 py-1.5 rounded-lg transition-colors">使用済みにする</button>` : ''}
+        ${c.status !== 'archived' ? `<button onclick="markAs('${c.id}', 'archived')" class="text-xs bg-purple-50 hover:bg-purple-100 text-purple-700 px-3 py-1.5 rounded-lg transition-colors">保存する</button>` : ''}
+        ${c.source_episode_id ? `<a href="index.html" class="text-xs text-primary hover:underline px-3 py-1.5">元エピソードを見る</a>` : ''}
+      </div>
+    `;
+    div.setAttribute('data-id', c.id);
+    div.setAttribute('data-content', c.content || '');
+    return div;
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  window.copyContent = function(id) {
+    const card = document.querySelector(`[data-id="${id}"]`);
+    const text = card?.getAttribute('data-content') || '';
+    navigator.clipboard.writeText(text).then(() => {
+      alert('コピーしました');
+    });
+  };
+
+  window.markAs = async function(id, status) {
+    try {
+      await updateDoc(doc(db, 'contents', id), { status });
+      const item = allContents.find(c => c.id === id);
+      if (item) item.status = status;
+      renderContents();
+    } catch (e) {
+      alert('更新に失敗しました: ' + e.message);
+    }
+  };
+
+  window.setTypeFilter = function(type) {
+    currentTypeFilter = type;
+    document.querySelectorAll('.type-filter-btn').forEach(btn => {
+      const active = btn.dataset.type === type;
+      btn.classList.toggle('bg-primary', active);
+      btn.classList.toggle('text-white', active);
+      btn.classList.toggle('border-primary', active);
+    });
+    renderContents();
+  };
+
+  document.getElementById('status-filter').addEventListener('change', renderContents);
+
+  setTypeFilter('all');
+</script>
+</body>
+</html>
