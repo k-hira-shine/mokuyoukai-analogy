@@ -432,6 +432,13 @@
       ${tools ? `<div class="mb-3"><div class="text-xs font-medium text-gray-400 mb-1">tools</div><div class="flex flex-wrap gap-1">${tools}</div></div>` : ''}
       ${tags ? `<div class="mb-3"><div class="text-xs font-medium text-gray-400 mb-1">tags</div><div class="flex flex-wrap gap-1">${tags}</div></div>` : ''}
       ${resources ? `<div class="mb-3"><div class="text-xs font-medium text-gray-400 mb-1">resources</div><div class="flex flex-wrap gap-2">${resources}</div></div>` : ''}
+      ${ep.original_text
+        ? `<div class="mt-4 pt-4 border-t border-gray-100">
+            <div class="text-xs font-medium text-gray-400 mb-2">元の投稿テキスト</div>
+            <pre class="text-xs text-gray-600 whitespace-pre-wrap bg-gray-50 rounded-lg p-3 leading-relaxed max-h-48 overflow-y-auto">${ep.original_text}</pre>
+          </div>`
+        : `<div class="mt-4 pt-4 border-t border-gray-100 text-xs text-gray-300">元の投稿テキストは保存されていません</div>`
+      }
     `;
 
     document.getElementById('detail-modal').classList.remove('hidden');

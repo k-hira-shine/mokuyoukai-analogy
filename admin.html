@@ -312,6 +312,10 @@
       const prompt = buildExtractionPromptMulti(posts);
       const raw = await callGemini(apiKey, prompt);
       const parsed = parseGeminiResponse(raw);
+      // 各エピソードに元の投稿テキストを付与
+      parsed.episodes.forEach((ep, i) => {
+        if (posts[i]) ep.original_text = posts[i].text;
+      });
       processedResults = parsed.episodes;
 
       renderResults(parsed.episodes, parsed.daily_suggestion);
@@ -594,6 +598,7 @@ ${posts.map((p, i) => `--- 投稿${i + 1} ---\n${p}`).join('\n\n')}`;
       const ep = parsed.episodes?.[0];
       if (!ep) throw new Error('エピソードを抽出できませんでした');
 
+      ep.original_text = text;
       document.getElementById('test-result-json').value = JSON.stringify(ep, null, 2);
 
       const isGenre1 = String(ep.genre) === '1';

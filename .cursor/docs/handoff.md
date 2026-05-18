@@ -48,6 +48,7 @@
   "impression": "string | null",
   "unsolved": "string | null",
   "resources": [{"label": "string", "url": "string"}],
+  "original_text": "string | null（元の投稿テキスト・分析時に自動保存）",
   "genre": "1（必須・ジャンル①を示す）",
   "tags": ["string配列（必須）"],
   "status": "draft | published（必須）"
@@ -80,6 +81,7 @@
   "period": "string | null（例: '約1年', '5日間', '10日間'）",
   "scale": "small | big（必須）",
   "resources": [{"label": "string", "url": "string"}],
+  "original_text": "string | null（元の投稿テキスト・分析時に自動保存）",
   "genre": "2（必須・ジャンル②を示す）",
   "tags": ["string配列（必須）"],
   "status": "draft | published（必須）"
