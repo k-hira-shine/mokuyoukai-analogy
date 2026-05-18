@@ -108,6 +108,22 @@
   </div>
 </main>
 
+<!-- 詳細モーダル -->
+<div id="detail-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div class="p-6">
+      <div class="flex items-start justify-between mb-4">
+        <div id="detail-genre-badge"></div>
+        <button onclick="closeDetailModal()" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+      </div>
+      <div id="detail-body"></div>
+      <button onclick="openGenerateFromDetail()" class="mt-6 w-full bg-primary text-white font-medium py-3 rounded-xl hover:bg-indigo-700 transition-colors text-sm">
+        このエピソードでコンテンツを生成
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- コンテンツ生成モーダル -->
 <div id="generate-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
   <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -311,7 +327,8 @@
         </div>
       </div>
       <div>
-        <h3 class="font-semibold text-gray-800 text-sm leading-snug mb-1">${ep.title || '（タイトルなし）'}</h3>
+        <h3 onclick="event.stopPropagation(); openDetailModal('${ep.id}')"
+          class="font-semibold text-gray-800 text-sm leading-snug mb-1 hover:text-primary hover:underline cursor-pointer">${ep.title || '（タイトルなし）'}</h3>
         <p class="text-xs text-gray-500">${ep.author || ''}</p>
       </div>
       ${ep.summary ? `<p class="text-xs text-gray-600 leading-relaxed line-clamp-3">${ep.summary}</p>` : ''}
@@ -342,6 +359,94 @@
   document.getElementById('post-type-filter').addEventListener('change', renderEpisodes);
   document.getElementById('scale-filter').addEventListener('change', renderEpisodes);
   document.getElementById('status-filter').addEventListener('change', renderEpisodes);
+
+  // --- 詳細モーダル ---
+  let detailEpisode = null;
+
+  window.openDetailModal = function(id) {
+    const ep = allEpisodes.find(e => e.id === id);
+    if (!ep) return;
+    detailEpisode = ep;
+
+    const isGenre1 = String(ep.genre) === '1';
+    const genreLabel = isGenre1 ? 'AI活用事例①' : '変化・成長②';
+    const genreColor = isGenre1 ? 'bg-sky-100 text-sky-700' : 'bg-amber-100 text-amber-700';
+
+    document.getElementById('detail-genre-badge').innerHTML = `
+      <div class="flex items-center gap-2 flex-wrap">
+        <span class="text-xs font-medium px-2 py-0.5 rounded-full ${genreColor}">${genreLabel}</span>
+        ${ep.scale === 'big' ? '<span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-medium">BIG</span>' : ''}
+        ${ep.title_generated ? '<span class="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">タイトル要確認</span>' : ''}
+        <span class="text-xs text-gray-400">${ep.date || ''}</span>
+      </div>
+    `;
+
+    const fields1 = [
+      ['post_type', ep.post_type],
+      ['background', ep.background],
+      ['steps', Array.isArray(ep.steps) ? ep.steps.join('\n') : ep.steps],
+      ['result', ep.result],
+      ['key_point', ep.key_point],
+      ['impression', ep.impression],
+      ['unsolved', ep.unsolved],
+    ];
+    const fields2 = [
+      ['before', ep.before],
+      ['after', ep.after],
+      ['trigger', ep.trigger],
+      ['key_action', ep.key_action],
+      ['impact', ep.impact],
+      ['impression', ep.impression],
+      ['period', ep.period],
+    ];
+    const extraFields = isGenre1 ? fields1 : fields2;
+
+    const tags = (ep.tags || []).map(t =>
+      `<span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">${t}</span>`
+    ).join('');
+    const tools = (ep.tools || []).map(t =>
+      `<span class="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">${t}</span>`
+    ).join('');
+    const resources = (ep.resources || []).map(r =>
+      `<a href="${r.url}" target="_blank" class="text-xs text-primary hover:underline">${r.label || r.url}</a>`
+    ).join('  ');
+
+    const extraHtml = extraFields
+      .filter(([, v]) => v)
+      .map(([k, v]) => `
+        <div class="mb-3">
+          <div class="text-xs font-medium text-gray-400 mb-1">${k}</div>
+          <p class="text-sm text-gray-700 leading-relaxed whitespace-pre-line">${v}</p>
+        </div>
+      `).join('');
+
+    document.getElementById('detail-body').innerHTML = `
+      <h2 class="text-lg font-bold text-gray-800 leading-snug mb-1">${ep.title || '（タイトルなし）'}</h2>
+      <p class="text-sm text-gray-500 mb-4">${ep.author || ''}</p>
+
+      ${ep.message ? `<div class="bg-indigo-50 rounded-xl p-4 mb-4"><p class="text-sm text-primary font-medium leading-relaxed">"${ep.message}"</p></div>` : ''}
+      ${ep.summary ? `<div class="mb-4"><div class="text-xs font-medium text-gray-400 mb-1">summary</div><p class="text-sm text-gray-700 leading-relaxed">${ep.summary}</p></div>` : ''}
+
+      ${extraHtml}
+
+      ${tools ? `<div class="mb-3"><div class="text-xs font-medium text-gray-400 mb-1">tools</div><div class="flex flex-wrap gap-1">${tools}</div></div>` : ''}
+      ${tags ? `<div class="mb-3"><div class="text-xs font-medium text-gray-400 mb-1">tags</div><div class="flex flex-wrap gap-1">${tags}</div></div>` : ''}
+      ${resources ? `<div class="mb-3"><div class="text-xs font-medium text-gray-400 mb-1">resources</div><div class="flex flex-wrap gap-2">${resources}</div></div>` : ''}
+    `;
+
+    document.getElementById('detail-modal').classList.remove('hidden');
+  };
+
+  window.closeDetailModal = function() {
+    document.getElementById('detail-modal').classList.add('hidden');
+    detailEpisode = null;
+  };
+
+  window.openGenerateFromDetail = function() {
+    if (!detailEpisode) return;
+    closeDetailModal();
+    openGenerateModal(detailEpisode.id);
+  };
 
   // --- コンテンツ生成モーダル ---
   window.openGenerateModal = function(id) {
