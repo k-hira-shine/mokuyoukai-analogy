@@ -87,6 +87,18 @@
         <span class="text-sm font-medium text-gray-700">分析結果（編集できます）</span>
         <div id="test-genre-badge"></div>
       </div>
+      <div class="flex items-center gap-2 mb-3 p-3 bg-gray-50 rounded-lg">
+        <span class="text-xs text-gray-500 shrink-0">ジャンルを変更:</span>
+        <button onclick="switchGenre(1)" data-genre="1"
+          class="genre-switch-btn text-xs px-3 py-1.5 rounded-lg border font-medium transition-all">
+          ①AI活用事例
+        </button>
+        <button onclick="switchGenre(2)" data-genre="2"
+          class="genre-switch-btn text-xs px-3 py-1.5 rounded-lg border font-medium transition-all">
+          ②変化・成長
+        </button>
+        <span class="text-xs text-gray-400 ml-1">JSONのgenreフィールドも自動更新されます</span>
+      </div>
       <textarea id="test-result-json"
         class="w-full border border-gray-200 rounded-lg p-3 text-xs font-mono text-gray-700 resize-none focus:outline-none focus:border-primary"
         rows="18"></textarea>
@@ -453,6 +465,9 @@ ${posts.map((p, i) => `--- 投稿${i + 1} ---\n${p}`).join('\n\n')}`;
       }
 
       document.getElementById('test-result').classList.remove('hidden');
+
+      // ジャンル切り替えボタンの初期アクティブ状態を設定
+      switchGenre(ep.genre === 1 ? 1 : 2);
     } catch (e) {
       alert('分析に失敗しました: ' + e.message);
     } finally {
@@ -473,6 +488,33 @@ ${posts.map((p, i) => `--- 投稿${i + 1} ---\n${p}`).join('\n\n')}`;
     } catch (e) {
       alert('保存に失敗しました: ' + e.message);
     }
+  };
+
+  window.switchGenre = function(genre) {
+    const ta = document.getElementById('test-result-json');
+    let ep;
+    try { ep = JSON.parse(ta.value); } catch {
+      alert('JSONの形式が崩れています。先に編集内容を確認してください。'); return;
+    }
+    ep.genre = genre;
+    ta.value = JSON.stringify(ep, null, 2);
+
+    // バッジ更新
+    const badge = document.getElementById('test-genre-badge');
+    badge.innerHTML = genre === 1
+      ? '<span class="text-xs bg-sky-100 text-sky-700 px-2 py-0.5 rounded-full font-medium">AI活用事例①</span>'
+      : '<span class="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">変化・成長②</span>';
+    if (ep.title_generated) {
+      badge.innerHTML += ' <span class="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">タイトル要確認</span>';
+    }
+
+    // ボタンのアクティブ状態
+    document.querySelectorAll('.genre-switch-btn').forEach(btn => {
+      const active = Number(btn.dataset.genre) === genre;
+      btn.classList.toggle('bg-primary', active);
+      btn.classList.toggle('text-white', active);
+      btn.classList.toggle('border-primary', active);
+    });
   };
 
   window.clearTest = function() {
