@@ -74,6 +74,21 @@
       <h2 class="font-bold text-gray-800">1件テスト分析</h2>
       <span class="text-xs bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full">動作確認用</span>
     </div>
+    <div class="flex items-center gap-2 mb-3">
+      <span class="text-xs text-gray-500 shrink-0">ジャンルを指定:</span>
+      <button onclick="selectTestGenre(0)" data-tgenre="0"
+        class="test-genre-btn text-xs px-3 py-1.5 rounded-lg border border-primary bg-primary text-white font-medium transition-all">
+        自動判定
+      </button>
+      <button onclick="selectTestGenre(1)" data-tgenre="1"
+        class="test-genre-btn text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 font-medium transition-all">
+        ①AI活用事例
+      </button>
+      <button onclick="selectTestGenre(2)" data-tgenre="2"
+        class="test-genre-btn text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 font-medium transition-all">
+        ②変化・成長
+      </button>
+    </div>
     <textarea id="test-input" placeholder="Fincsからコピーした投稿テキストを1件貼り付ける"
       class="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-primary resize-none mb-3"
       rows="5"></textarea>
@@ -314,8 +329,16 @@
     }
   };
 
-  function buildExtractionPrompt(posts) {
+  function buildExtractionPrompt(posts, forceGenre = 0) {
+    const genreInstruction = forceGenre === 1
+      ? '【ジャンル指定】この投稿はジャンル1（AI活用事例）として処理してください。genre: 1 を必ず使用すること。'
+      : forceGenre === 2
+      ? '【ジャンル指定】この投稿はジャンル2（変化・成長）として処理してください。genre: 2 を必ず使用すること。'
+      : '';
+
     return `以下の投稿テキストをそれぞれ解析し、JSON形式で返してください。
+
+${genreInstruction}
 
 【ジャンル分類】
 - ジャンル1（genre: 1）: AI活用事例のシェア（ツールの使い方・作ったもの・学んだ知識）
@@ -477,6 +500,20 @@ ${posts.map((p, i) => `--- 投稿${i + 1} ---\n${p}`).join('\n\n')}`;
   };
 
   // --- 1件テスト分析 ---
+  let testGenre = 0; // 0=自動, 1=ジャンル①, 2=ジャンル②
+
+  window.selectTestGenre = function(genre) {
+    testGenre = genre;
+    document.querySelectorAll('.test-genre-btn').forEach(btn => {
+      const active = Number(btn.dataset.tgenre) === genre;
+      btn.classList.toggle('bg-primary', active);
+      btn.classList.toggle('text-white', active);
+      btn.classList.toggle('border-primary', active);
+      btn.classList.toggle('border-gray-200', !active);
+      btn.classList.toggle('text-gray-600', !active);
+    });
+  };
+
   window.analyzeOne = async function() {
     const apiKey = localStorage.getItem('gemini_api_key');
     if (!apiKey) { alert('Gemini APIキーを設定してください'); return; }
@@ -488,7 +525,7 @@ ${posts.map((p, i) => `--- 投稿${i + 1} ---\n${p}`).join('\n\n')}`;
     allBtns.forEach(b => { b.disabled = true; b.textContent = '分析中...'; });
 
     try {
-      const prompt = buildExtractionPrompt([text]);
+      const prompt = buildExtractionPrompt([text], testGenre);
       const raw = await callGemini(apiKey, prompt);
       const parsed = parseGeminiResponse(raw);
       const ep = parsed.episodes?.[0];
