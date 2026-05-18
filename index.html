@@ -117,9 +117,14 @@
         <button onclick="closeDetailModal()" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
       </div>
       <div id="detail-body"></div>
-      <button onclick="openGenerateFromDetail()" class="mt-6 w-full bg-primary text-white font-medium py-3 rounded-xl hover:bg-indigo-700 transition-colors text-sm">
-        このエピソードでコンテンツを生成
-      </button>
+      <div class="flex gap-2 mt-6">
+        <button onclick="openGenerateFromDetail()" class="flex-1 bg-primary text-white font-medium py-3 rounded-xl hover:bg-indigo-700 transition-colors text-sm">
+          このエピソードでコンテンツを生成
+        </button>
+        <button id="detail-delete-btn" onclick="deleteEpisode()" class="hidden bg-red-50 text-red-500 hover:bg-red-100 font-medium py-3 px-4 rounded-xl transition-colors text-sm">
+          削除
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -441,12 +446,30 @@
       }
     `;
 
+    // 管理者のみ削除ボタンを表示
+    const isAdmin = currentUser?.email === ADMIN_EMAIL;
+    document.getElementById('detail-delete-btn').classList.toggle('hidden', !isAdmin);
+
     document.getElementById('detail-modal').classList.remove('hidden');
   };
 
   window.closeDetailModal = function() {
     document.getElementById('detail-modal').classList.add('hidden');
     detailEpisode = null;
+  };
+
+  window.deleteEpisode = async function() {
+    if (!detailEpisode) return;
+    if (!confirm(`「${detailEpisode.title || 'このエピソード'}」を削除しますか？\nこの操作は元に戻せません。`)) return;
+    const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/11.8.0/firebase-firestore.js");
+    try {
+      await deleteDoc(doc(db, 'episodes', detailEpisode.id));
+      allEpisodes = allEpisodes.filter(e => e.id !== detailEpisode.id);
+      closeDetailModal();
+      renderEpisodes();
+    } catch (e) {
+      alert('削除に失敗しました: ' + e.message);
+    }
   };
 
   window.openGenerateFromDetail = function() {
