@@ -421,12 +421,22 @@ ${posts.map((p, i) => `--- 投稿${i + 1} ---\n${p}`).join('\n\n')}`;
     episodes.forEach((ep, i) => {
       const div = document.createElement('div');
       div.className = 'border border-gray-200 rounded-xl p-4';
-      const genreLabel = String(ep.genre) === '1' ? 'AI活用事例①' : '変化・成長②';
-      const genreColor = String(ep.genre) === '1' ? 'bg-sky-100 text-sky-700' : 'bg-amber-100 text-amber-700';
+      const isG1 = String(ep.genre) === '1';
+      const genreLabel = isG1 ? 'AI活用事例①' : '変化・成長②';
+      const genreColor = isG1 ? 'bg-sky-100 text-sky-700' : 'bg-amber-100 text-amber-700';
+      const g1Active = isG1 ? 'bg-primary text-white border-primary' : 'border-gray-200 text-gray-600';
+      const g2Active = !isG1 ? 'bg-primary text-white border-primary' : 'border-gray-200 text-gray-600';
       div.innerHTML = `
-        <div class="flex items-start justify-between mb-3">
-          <span class="text-xs font-medium px-2 py-0.5 rounded-full ${genreColor}">${genreLabel}</span>
+        <div class="flex items-center justify-between mb-3">
+          <span id="genre-badge-${i}" class="text-xs font-medium px-2 py-0.5 rounded-full ${genreColor}">${genreLabel}</span>
           ${ep.title_generated ? '<span class="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">タイトル要確認</span>' : ''}
+        </div>
+        <div class="flex items-center gap-2 mb-3 p-2 bg-gray-50 rounded-lg">
+          <span class="text-xs text-gray-500 shrink-0">ジャンル変更:</span>
+          <button onclick="switchResultGenre(${i}, 1)"
+            class="result-genre-btn-${i} text-xs px-3 py-1 rounded-lg border font-medium transition-all ${g1Active}">①AI活用事例</button>
+          <button onclick="switchResultGenre(${i}, 2)"
+            class="result-genre-btn-${i} text-xs px-3 py-1 rounded-lg border font-medium transition-all ${g2Active}">②変化・成長</button>
         </div>
         <textarea class="result-json w-full border border-gray-200 rounded-lg p-3 text-xs font-mono text-gray-700 resize-none focus:outline-none focus:border-primary"
           rows="12" data-index="${i}">${JSON.stringify(ep, null, 2)}</textarea>
@@ -434,6 +444,37 @@ ${posts.map((p, i) => `--- 投稿${i + 1} ---\n${p}`).join('\n\n')}`;
       list.appendChild(div);
     });
   }
+
+  // --- キュー処理結果のジャンル切り替え ---
+  window.switchResultGenre = function(i, genre) {
+    const ta = document.querySelector(`.result-json[data-index="${i}"]`);
+    let ep;
+    try { ep = JSON.parse(ta.value); } catch {
+      alert('JSONの形式が崩れています。編集内容を確認してください。'); return;
+    }
+    ep.genre = genre;
+    ta.value = JSON.stringify(ep, null, 2);
+
+    // バッジ更新
+    const badge = document.getElementById(`genre-badge-${i}`);
+    if (genre === 1) {
+      badge.className = 'text-xs font-medium px-2 py-0.5 rounded-full bg-sky-100 text-sky-700';
+      badge.textContent = 'AI活用事例①';
+    } else {
+      badge.className = 'text-xs font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-700';
+      badge.textContent = '変化・成長②';
+    }
+
+    // ボタンのアクティブ状態
+    document.querySelectorAll(`.result-genre-btn-${i}`).forEach(btn => {
+      const active = btn.textContent.includes(genre === 1 ? '①' : '②');
+      btn.classList.toggle('bg-primary', active);
+      btn.classList.toggle('text-white', active);
+      btn.classList.toggle('border-primary', active);
+      btn.classList.toggle('border-gray-200', !active);
+      btn.classList.toggle('text-gray-600', !active);
+    });
+  };
 
   // --- 1件テスト分析 ---
   window.analyzeOne = async function() {
