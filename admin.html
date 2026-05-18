@@ -189,7 +189,7 @@
 <script type="module">
   import { db, auth, googleProvider } from './firebase-config.js';
   import {
-    collection, addDoc, doc, setDoc
+    collection, addDoc, doc, setDoc, getDocs, query, where
   } from "https://www.gstatic.com/firebasejs/11.8.0/firebase-firestore.js";
   import {
     onAuthStateChanged, signInWithPopup, signOut
@@ -633,6 +633,10 @@ ${posts.map((p, i) => `--- 投稿${i + 1} ---\n${p}`).join('\n\n')}`;
     catch { alert('JSONの形式が正しくありません。編集内容を確認してください。'); return; }
 
     try {
+      const dups = await findDuplicates([ep]);
+      if (dups.length > 0) {
+        if (!confirm('⚠️ 同じ投稿テキストがすでに Firestore に保存されています。それでも保存しますか？')) return;
+      }
       await addDoc(collection(db, 'episodes'), ep);
       alert('Firestore に保存しました');
       clearTest();
@@ -689,6 +693,16 @@ ${posts.map((p, i) => `--- 投稿${i + 1} ---\n${p}`).join('\n\n')}`;
         try { processedResults[i] = JSON.parse(ta.value); } catch {}
       });
 
+      const dups = await findDuplicates(processedResults);
+      if (dups.length > 0) {
+        const titles = dups.map(ep => ep.title || ep.original_text?.slice(0, 30) || '（無題）').join('\n');
+        if (!confirm(`⚠️ 以下の ${dups.length} 件はすでに Firestore に保存されています。それでも全件保存しますか？\n\n${titles}`)) {
+          btn.disabled = false;
+          btn.textContent = '全件 Firestore に保存';
+          return;
+        }
+      }
+
       const promises = processedResults.map(ep =>
         addDoc(collection(db, 'episodes'), ep)
       );
@@ -703,6 +717,14 @@ ${posts.map((p, i) => `--- 投稿${i + 1} ---\n${p}`).join('\n\n')}`;
       btn.textContent = '全件 Firestore に保存';
     }
   };
+
+  async function findDuplicates(episodes) {
+    const texts = episodes.map(ep => ep.original_text).filter(Boolean);
+    if (texts.length === 0) return [];
+    const snap = await getDocs(query(collection(db, 'episodes'), where('original_text', 'in', texts.slice(0, 30))));
+    const existing = new Set(snap.docs.map(d => d.data().original_text));
+    return episodes.filter(ep => ep.original_text && existing.has(ep.original_text));
+  }
 
   function escapeHtml(str) {
     return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
