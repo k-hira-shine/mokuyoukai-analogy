@@ -199,18 +199,21 @@
   let queue = JSON.parse(localStorage.getItem('moku_queue') || '[]');
   let processedResults = [];
 
-  // --- 認証 ---
+  // --- 認証（一時停止中）---
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('user-info').classList.add('hidden');
+  initApiKeyStatus();
+  renderQueue();
+
+  /* 再度有効化するときはここを戻す:
   onAuthStateChanged(auth, async (user) => {
     if (!user) { showLogin(); return; }
-
-    // 管理者チェック
     if (ADMIN_EMAIL && user.email !== ADMIN_EMAIL) {
       document.getElementById('login-screen').classList.add('hidden');
       document.getElementById('no-access-screen').classList.remove('hidden');
       document.getElementById('user-info').classList.add('hidden');
       return;
     }
-
     document.getElementById('login-screen').classList.add('hidden');
     document.getElementById('user-info').classList.remove('hidden');
     document.getElementById('user-avatar').src = user.photoURL || '';
@@ -218,12 +221,7 @@
     initApiKeyStatus();
     renderQueue();
   });
-
-  document.getElementById('login-btn').addEventListener('click', async () => {
-    try { await signInWithPopup(auth, googleProvider); }
-    catch (e) { alert('ログインに失敗しました: ' + e.message); }
-  });
-  document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
+  */
 
   function showLogin() {
     document.getElementById('login-screen').classList.remove('hidden');

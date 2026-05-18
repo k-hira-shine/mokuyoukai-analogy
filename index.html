@@ -217,17 +217,15 @@
   // ▼ 管理ツールリンクを表示する管理者のメールアドレス
   const ADMIN_EMAIL = 'kazuya.imasaka@gmail.com';
 
-  // --- 認証 ---
+  // --- 認証（一時停止中）---
+  // ログインなしで直接データを読み込む
+  loadEpisodes();
+
+  /* 再度有効化するときはここを戻す:
   onAuthStateChanged(auth, async (user) => {
-    if (!user) {
-      showLoginScreen();
-      return;
-    }
+    if (!user) { showLoginScreen(); return; }
     if (ALLOWED_EMAILS.length > 0 && !ALLOWED_EMAILS.includes(user.email)) {
-      await signOut(auth);
-      alert('アクセス権限がありません。');
-      showLoginScreen();
-      return;
+      await signOut(auth); alert('アクセス権限がありません。'); showLoginScreen(); return;
     }
     currentUser = user;
     hideLoginScreen(user);
@@ -236,18 +234,7 @@
     }
     loadEpisodes();
   });
-
-  document.getElementById('login-btn').addEventListener('click', async () => {
-    try {
-      await signInWithPopup(auth, googleProvider);
-    } catch (e) {
-      alert('ログインに失敗しました: ' + e.message);
-    }
-  });
-
-  document.getElementById('logout-btn').addEventListener('click', async () => {
-    await signOut(auth);
-  });
+  */
 
   function showLoginScreen() {
     document.getElementById('login-screen').classList.remove('hidden');

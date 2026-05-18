@@ -18,21 +18,17 @@ service cloud.firestore {
         request.auth.token.email == 'kazuya.imasaka@gmail.com';
     }
 
-    // エピソード: 許可ユーザーは読み取り可、管理者のみ書き込み可
+    // 認証一時停止中: 全員読み書き可（テスト用）
     match /episodes/{docId} {
-      allow read: if isAllowed();
-      allow write: if isAdmin();
+      allow read, write: if true;
     }
 
-    // コンテンツ保管庫: 許可ユーザーは読み取り可、管理者のみ書き込み可
     match /contents/{docId} {
-      allow read: if isAllowed();
-      allow write: if isAdmin();
+      allow read, write: if true;
     }
 
-    // 設定: 管理者のみ
     match /settings/{docId} {
-      allow read, write: if isAdmin();
+      allow read, write: if true;
     }
   }
 }

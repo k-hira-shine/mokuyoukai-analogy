@@ -105,12 +105,14 @@
   let allContents = [];
   let currentTypeFilter = 'all';
 
+  // --- 認証（一時停止中）---
+  loadContents();
+
+  /* 再度有効化するときはここを戻す:
   onAuthStateChanged(auth, async (user) => {
     if (!user) { showLogin(); return; }
     if (ALLOWED_EMAILS.length > 0 && !ALLOWED_EMAILS.includes(user.email)) {
-      await signOut(auth);
-      alert('アクセス権限がありません。');
-      showLogin(); return;
+      await signOut(auth); alert('アクセス権限がありません。'); showLogin(); return;
     }
     hideLogin(user);
     if (ADMIN_EMAIL && user.email === ADMIN_EMAIL) {
@@ -118,12 +120,7 @@
     }
     loadContents();
   });
-
-  document.getElementById('login-btn').addEventListener('click', async () => {
-    try { await signInWithPopup(auth, googleProvider); }
-    catch (e) { alert('ログインに失敗しました: ' + e.message); }
-  });
-  document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
+  */
 
   function showLogin() {
     document.getElementById('login-screen').classList.remove('hidden');
