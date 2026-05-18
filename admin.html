@@ -68,6 +68,41 @@
     <p class="mt-1 text-xs text-gray-400">APIキーはこのブラウザのみに保存されます。GitHubには送信されません。</p>
   </section>
 
+  <!-- 1件テスト分析 -->
+  <section class="bg-white rounded-xl border border-indigo-200 p-5">
+    <div class="flex items-center gap-2 mb-3">
+      <h2 class="font-bold text-gray-800">1件テスト分析</h2>
+      <span class="text-xs bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full">動作確認用</span>
+    </div>
+    <textarea id="test-input" placeholder="Fincsからコピーした投稿テキストを1件貼り付ける"
+      class="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-primary resize-none mb-3"
+      rows="5"></textarea>
+    <button onclick="analyzeOne()"
+      class="w-full bg-indigo-500 text-white text-sm font-medium py-2.5 rounded-lg hover:bg-indigo-600 transition-colors">
+      1件だけ分析する
+    </button>
+
+    <div id="test-result" class="hidden mt-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-sm font-medium text-gray-700">分析結果（編集できます）</span>
+        <div id="test-genre-badge"></div>
+      </div>
+      <textarea id="test-result-json"
+        class="w-full border border-gray-200 rounded-lg p-3 text-xs font-mono text-gray-700 resize-none focus:outline-none focus:border-primary"
+        rows="18"></textarea>
+      <div class="flex gap-2 mt-2">
+        <button onclick="saveOne()"
+          class="flex-1 bg-green-500 text-white text-sm font-medium py-2.5 rounded-lg hover:bg-green-600 transition-colors">
+          Firestore に保存
+        </button>
+        <button onclick="clearTest()"
+          class="bg-gray-100 text-gray-600 text-sm px-4 py-2.5 rounded-lg hover:bg-gray-200 transition-colors">
+          クリア
+        </button>
+      </div>
+    </div>
+  </section>
+
   <!-- キュー -->
   <section class="bg-white rounded-xl border border-gray-200 p-5">
     <div class="flex items-center justify-between mb-3">
@@ -387,6 +422,64 @@ ${posts.map((p, i) => `--- 投稿${i + 1} ---\n${p}`).join('\n\n')}`;
       list.appendChild(div);
     });
   }
+
+  // --- 1件テスト分析 ---
+  window.analyzeOne = async function() {
+    const apiKey = localStorage.getItem('gemini_api_key');
+    if (!apiKey) { alert('Gemini APIキーを設定してください'); return; }
+    const text = document.getElementById('test-input').value.trim();
+    if (!text) { alert('投稿テキストを入力してください'); return; }
+
+    const btn = document.querySelector('#test-result ~ * button, section button[onclick="analyzeOne()"]');
+    const allBtns = document.querySelectorAll('button[onclick="analyzeOne()"]');
+    allBtns.forEach(b => { b.disabled = true; b.textContent = '分析中...'; });
+
+    try {
+      const prompt = buildExtractionPrompt([text]);
+      const raw = await callGemini(apiKey, prompt);
+      const parsed = parseGeminiResponse(raw);
+      const ep = parsed.episodes?.[0];
+      if (!ep) throw new Error('エピソードを抽出できませんでした');
+
+      document.getElementById('test-result-json').value = JSON.stringify(ep, null, 2);
+
+      const isGenre1 = String(ep.genre) === '1';
+      const badge = document.getElementById('test-genre-badge');
+      badge.innerHTML = isGenre1
+        ? '<span class="text-xs bg-sky-100 text-sky-700 px-2 py-0.5 rounded-full font-medium">AI活用事例①</span>'
+        : '<span class="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">変化・成長②</span>';
+      if (ep.title_generated) {
+        badge.innerHTML += ' <span class="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">タイトル要確認</span>';
+      }
+
+      document.getElementById('test-result').classList.remove('hidden');
+    } catch (e) {
+      alert('分析に失敗しました: ' + e.message);
+    } finally {
+      allBtns.forEach(b => { b.disabled = false; b.textContent = '1件だけ分析する'; });
+    }
+  };
+
+  window.saveOne = async function() {
+    const jsonText = document.getElementById('test-result-json').value;
+    let ep;
+    try { ep = JSON.parse(jsonText); }
+    catch { alert('JSONの形式が正しくありません。編集内容を確認してください。'); return; }
+
+    try {
+      await addDoc(collection(db, 'episodes'), ep);
+      alert('Firestore に保存しました');
+      clearTest();
+    } catch (e) {
+      alert('保存に失敗しました: ' + e.message);
+    }
+  };
+
+  window.clearTest = function() {
+    document.getElementById('test-input').value = '';
+    document.getElementById('test-result-json').value = '';
+    document.getElementById('test-result').classList.add('hidden');
+  };
 
   // --- 全件保存 ---
   window.saveAll = async function() {
