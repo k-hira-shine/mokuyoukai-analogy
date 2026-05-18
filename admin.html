@@ -283,6 +283,11 @@
   window.addToQueue = function() {
     const text = document.getElementById('post-input').value.trim();
     if (!text) { alert('投稿テキストを入力してください'); return; }
+    const isDuplicate = queue.some(item => (typeof item === 'string' ? item : item.text) === text);
+    if (isDuplicate) {
+      alert('⚠️ 同じ内容がすでにキューに入っています。');
+      return;
+    }
     queue.push({ text, genre: queueGenre });
     saveQueue();
     document.getElementById('post-input').value = '';
